@@ -30,7 +30,7 @@ def _create_engine() -> AsyncEngine:
         # SQLite-specific settings for async
         engine = create_async_engine(
             database_url,
-            echo=(settings.environment == "development"),
+            echo=False,
             connect_args={"check_same_thread": False},
             poolclass=StaticPool,
         )
@@ -38,7 +38,7 @@ def _create_engine() -> AsyncEngine:
         # PostgreSQL and other databases
         engine = create_async_engine(
             database_url,
-            echo=(settings.environment == "development"),
+            echo=False,
             pool_pre_ping=True,
             pool_size=10,
             max_overflow=20,

@@ -54,6 +54,12 @@ DEFAULT_CATEGORIES = [
         "color": "#B0C4DE",
         "subcategories": [],
     },
+    {
+        "name": "Miscellaneous",
+        "icon": "🗂️",
+        "color": "#A9A9A9",
+        "subcategories": [],
+    },
 ]
 
 

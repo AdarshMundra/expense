@@ -77,7 +77,7 @@ def suggest_category(
                 }
 
     return {
-        "category": "Other",
+        "category": "Miscellaneous",
         "subcategory": None,
         "confidence": 0.1,
         "matched_keyword": None,
@@ -100,12 +100,8 @@ async def _resolve_category(
     # If no category provided, attempt auto-categorization
     if not category_name:
         suggestion = suggest_category(description, merchant)
-        if suggestion["confidence"] >= 0.5:
-            category_name = suggestion["category"]
-            subcategory_name = suggestion.get("subcategory")
-
-    if not category_name:
-        return None, None
+        category_name = suggestion["category"]  # always at least "Miscellaneous"
+        subcategory_name = suggestion.get("subcategory")
 
     # Look up category by name
     category = await category_repository.get_by_name(session, category_name)
