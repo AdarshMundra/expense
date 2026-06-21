@@ -1,11 +1,12 @@
 from __future__ import annotations
 
 import asyncio
+import re
 from logging.config import fileConfig
 
 from sqlalchemy import pool
 from sqlalchemy.engine import Connection
-from sqlalchemy.ext.asyncio import async_engine_from_config
+from sqlalchemy.ext.asyncio import create_async_engine
 
 from alembic import context
 
@@ -15,7 +16,16 @@ from app.config import settings
 
 config = context.config
 
-config.set_main_option("sqlalchemy.url", settings.database_url)
+
+def _clean_pg_url(url: str) -> tuple[str, dict]:
+    """Strip asyncpg-incompatible query params and return (clean_url, connect_args)."""
+    connect_args: dict = {}
+    if "sslmode=require" in url or "sslmode=prefer" in url:
+        connect_args["ssl"] = True
+    clean = re.sub(r"[?&]sslmode=[^&]*", "", url)
+    clean = re.sub(r"[?&]channel_binding=[^&]*", "", clean)
+    clean = re.sub(r"\?$", "", clean)
+    return clean, connect_args
 
 if config.config_file_name is not None:
     fileConfig(config.config_file_name)
@@ -42,10 +52,11 @@ def do_run_migrations(connection: Connection) -> None:
 
 
 async def run_async_migrations() -> None:
-    connectable = async_engine_from_config(
-        config.get_section(config.config_ini_section, {}),
-        prefix="sqlalchemy.",
+    clean_url, connect_args = _clean_pg_url(settings.database_url)
+    connectable = create_async_engine(
+        clean_url,
         poolclass=pool.NullPool,
+        connect_args=connect_args,
     )
     async with connectable.connect() as connection:
         await connection.run_sync(do_run_migrations)

@@ -73,7 +73,15 @@ logger.info("All tools, prompts, and resources registered.")
 
 def main() -> None:
     """Main entry point for the MCP server."""
-    mcp.run()
+    import os
+    transport = os.getenv("MCP_TRANSPORT", "stdio")
+    if transport == "sse":
+        host = os.getenv("HOST", "0.0.0.0")
+        port = int(os.getenv("PORT", "8000"))
+        logger.info(f"Starting SSE server on {host}:{port}")
+        mcp.run(transport="sse", host=host, port=port)
+    else:
+        mcp.run()
 
 
 if __name__ == "__main__":

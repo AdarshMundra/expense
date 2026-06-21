@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import logging
+import re
 from contextlib import asynccontextmanager
 from typing import AsyncGenerator
 
@@ -16,6 +17,20 @@ from app.config import settings
 from app.database.base import Base
 
 logger = logging.getLogger(__name__)
+
+
+def _clean_pg_url(url: str) -> tuple[str, dict]:
+    """Strip asyncpg-incompatible query params and return (clean_url, connect_args)."""
+    connect_args: dict = {}
+    needs_ssl = "sslmode=require" in url or "sslmode=prefer" in url
+    if needs_ssl:
+        connect_args["ssl"] = True
+    # Remove params asyncpg rejects
+    clean = re.sub(r"[?&]sslmode=[^&]*", "", url)
+    clean = re.sub(r"[?&]channel_binding=[^&]*", "", clean)
+    # Fix orphaned '?' if all params were stripped
+    clean = re.sub(r"\?$", "", clean)
+    return clean, connect_args
 
 # Global engine and session factory
 _engine: AsyncEngine | None = None
@@ -36,12 +51,14 @@ def _create_engine() -> AsyncEngine:
         )
     else:
         # PostgreSQL and other databases
+        clean_url, connect_args = _clean_pg_url(database_url)
         engine = create_async_engine(
-            database_url,
+            clean_url,
             echo=False,
             pool_pre_ping=True,
             pool_size=10,
             max_overflow=20,
+            connect_args=connect_args,
         )
 
     return engine
