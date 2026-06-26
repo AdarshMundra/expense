@@ -1,6 +1,6 @@
 # EC2 Deployment Guide — Expense MCP Server
 
-## What's already done
+## What's already done 
 - Neon PostgreSQL database created + all tables migrated
 - AWS ECR repository created
 - AWS Secrets Manager secrets stored
